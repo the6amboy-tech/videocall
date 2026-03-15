@@ -2,101 +2,142 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karthik Global Video</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Karthik Pro Video</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        body { background: #000; color: #fff; font-family: sans-serif; }
-        .vid-box { position: relative; width: 100%; height: 100%; background: #111; border-radius: 1rem; overflow: hidden; border: 1px solid #333; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        #local-v { transform: scaleX(-1); } /* Mirror self-view */
+        body { background: #000; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .video-container { position: relative; width: 100%; height: 100%; background: #111; border-radius: 1.5rem; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+        video { width: 100%; height: 100%; object-fit: cover; background: #000; }
+        #local-video { transform: scaleX(-1); }
+        .glass { background: rgba(20, 20, 20, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center min-h-screen p-4 overflow-hidden">
 
-    <div id="setup" class="w-full max-w-sm bg-zinc-900/50 p-8 rounded-3xl text-center border border-white/10">
-        <h2 class="text-2xl font-bold mb-6 text-blue-500">KARTHIK EDITS</h2>
-        <input type="text" id="code" placeholder="Enter Room Code" class="w-full bg-black border border-white/20 p-4 rounded-xl mb-4 text-center text-xl outline-none focus:border-blue-500">
-        <button onclick="connect('host')" class="w-full bg-blue-600 p-4 rounded-xl font-bold mb-2 hover:bg-blue-500 transition">Create Room</button>
-        <button onclick="connect('guest')" class="w-full bg-zinc-800 p-4 rounded-xl font-bold border border-white/10 hover:bg-zinc-700 transition">Join Room</button>
-        <p class="text-[10px] text-zinc-500 mt-4 uppercase tracking-widest">Global Relay Active</p>
+    <div id="setup-ui" class="relative z-10 w-full max-w-sm glass p-10 rounded-[2.5rem] shadow-2xl text-center">
+        <div class="mb-8">
+            <div class="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-600/20">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight">Karthik Chat</h1>
+            <p class="text-slate-500 text-xs mt-2 uppercase tracking-widest font-semibold">Global Mobile Ready</p>
+        </div>
+
+        <input type="text" id="room-id" placeholder="Room Code" 
+            class="w-full bg-black/50 border border-white/10 rounded-2xl px-4 py-4 mb-6 text-center text-2xl font-mono tracking-widest focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+        
+        <div class="space-y-3">
+            <button onclick="startConnection('host')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-5 rounded-2xl transition-all active:scale-95 shadow-lg shadow-blue-600/10">
+                Create Room
+            </button>
+            <button onclick="startConnection('guest')" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-5 rounded-2xl border border-white/10 transition-all active:scale-95">
+                Join Room
+            </button>
+        </div>
     </div>
 
-    <div id="interface" class="hidden fixed inset-0 p-4 flex flex-col gap-4 bg-black">
-        <div id="status" class="text-center text-[10px] font-bold text-blue-400 uppercase tracking-widest py-2">Waiting...</div>
-        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="vid-box">
-                <video id="remote-v" autoplay playsinline></video>
-                <div class="absolute bottom-4 left-4 text-[10px] bg-black/60 px-2 py-1 rounded">Remote User</div>
+    <div id="call-ui" class="hidden fixed inset-0 z-20 p-4 flex flex-col items-center bg-black">
+        <div id="call-status" class="bg-blue-500/10 text-blue-400 px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
+            Initializing...
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-5xl flex-1">
+            <div class="video-container">
+                <video id="remote-video" autoplay playsinline></video>
+                <div class="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest">Remote</div>
             </div>
-            <div class="vid-box">
-                <video id="local-v" autoplay muted playsinline></video>
-                <div class="absolute bottom-4 left-4 text-[10px] bg-black/60 px-2 py-1 rounded">You</div>
+            <div class="video-container">
+                <video id="local-video" autoplay muted playsinline></video>
+                <div class="absolute bottom-4 left-4 bg-black/50 backdrop-blur-md px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-widest">You</div>
             </div>
         </div>
-        <button onclick="location.reload()" class="mx-auto w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg hover:bg-red-500">
-            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
+        
+        <div class="mt-8 flex gap-6">
+            <button onclick="location.reload()" class="w-16 h-16 bg-red-600 hover:bg-red-500 rounded-full flex items-center justify-center shadow-xl transition-all active:scale-90">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
     </div>
 
     <script>
         let peer, localStream;
-        // Global STUN/TURN Config for long distance
-        const ice = { 
+        const statusEl = document.getElementById('call-status');
+
+        // STUN + Free TURN servers for long-distance/mobile network bypass
+        const config = {
             config: {
                 'iceServers': [
                     { 'urls': 'stun:stun.l.google.com:19302' },
                     { 'urls': 'stun:stun1.l.google.com:19302' },
-                    { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
+                    { 
+                        'urls': 'turn:openrelay.metered.ca:80', 
+                        'username': 'openrelayproject', 
+                        'credential': 'openrelayproject' 
+                    }
                 ]
             }
         };
 
-        async function connect(role) {
-            const id = document.getElementById('code').value.trim();
-            if(!id) return alert("Enter code");
+        async function startConnection(role) {
+            const code = document.getElementById('room-id').value.trim();
+            if (!code) return alert("Enter code");
 
             try {
-                // Pre-start camera
+                // IMPORTANT: Mobile browsers require camera to start before call handshake
                 localStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: 1280, height: 720 }, 
+                    video: { width: 1280, height: 720, facingMode: "user" }, 
                     audio: true 
                 });
-                document.getElementById('local-v').srcObject = localStream;
+                document.getElementById('local-video').srcObject = localStream;
                 
-                document.getElementById('setup').classList.add('hidden');
-                document.getElementById('interface').classList.remove('hidden');
+                document.getElementById('setup-ui').classList.add('hidden');
+                document.getElementById('call-ui').classList.remove('hidden');
 
-                const hID = 'vid-h-' + id;
-                const gID = 'vid-g-' + id;
+                const hostID = 'k-call-h-' + code;
+                const guestID = 'k-call-g-' + code;
 
-                if(role === 'host') {
-                    peer = new Peer(hID, ice);
-                    document.getElementById('status').innerText = "Host Active: Waiting for Guest...";
+                if (role === 'host') {
+                    peer = new Peer(hostID, config);
+                    statusEl.innerText = "Waiting for guest...";
                     peer.on('call', (call) => {
-                        document.getElementById('status').innerText = "Guest Joining...";
+                        statusEl.innerText = "Connecting...";
                         call.answer(localStream);
-                        handleCall(call);
+                        setupCallHandlers(call);
                     });
                 } else {
-                    peer = new Peer(gID, ice);
-                    document.getElementById('status').innerText = "Joining Host...";
+                    peer = new Peer(guestID, config);
+                    statusEl.innerText = "Joining host...";
                     peer.on('open', () => {
-                        const call = peer.call(hID, localStream);
-                        handleCall(call);
+                        const call = peer.call(hostID, localStream);
+                        setupCallHandlers(call);
                     });
                 }
-            } catch (e) { alert("Enable Camera Access!"); }
+
+                peer.on('error', (err) => {
+                    console.error(err);
+                    statusEl.innerText = "Connection Failed";
+                    alert("Ensure host has created room first!");
+                });
+
+            } catch (err) {
+                alert("Camera Access Required!");
+            }
         }
 
-        function handleCall(call) {
-            call.on('stream', (s) => {
-                const remoteVideo = document.getElementById('remote-v');
-                remoteVideo.srcObject = s;
-                // Double check play for mobile
-                remoteVideo.onloadedmetadata = () => remoteVideo.play();
-                document.getElementById('status').innerText = "Live Connection";
+        function setupCallHandlers(call) {
+            call.on('stream', (remoteStream) => {
+                const remoteVideo = document.getElementById('remote-video');
+                remoteVideo.srcObject = remoteStream;
+                
+                // Force video play for mobile autoplay restrictions
+                remoteVideo.onloadedmetadata = () => {
+                    remoteVideo.play().catch(e => console.log("Autoplay blocked, user interaction needed"));
+                };
+
+                statusEl.innerText = "Live Connection";
+                statusEl.classList.replace('text-blue-400', 'text-emerald-400');
             });
         }
     </script>
