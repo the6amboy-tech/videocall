@@ -3,51 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karthik Video Fix</title>
+    <title>Karthik Global Video</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; }
-        video { width: 100%; height: 100%; object-fit: cover; border-radius: 1rem; transform: scaleX(-1); background: #111; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .vid-box { position: relative; width: 100%; height: 100%; background: #111; border-radius: 1rem; overflow: hidden; border: 1px solid #333; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        #local-v { transform: scaleX(-1); } /* Mirror self-view */
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">
 
-    <div id="setup" class="w-full max-w-sm glass p-8 rounded-3xl text-center z-10">
-        <h2 class="text-xl font-bold mb-6">Karthik Call</h2>
-        <input type="text" id="code" placeholder="Room Code" class="w-full bg-black/40 border border-white/20 p-4 rounded-xl mb-4 text-center text-xl outline-none focus:border-blue-500">
-        <button onclick="connect('host')" class="w-full bg-blue-600 p-4 rounded-xl font-bold mb-2">Create Room</button>
-        <button onclick="connect('guest')" class="w-full bg-white/10 p-4 rounded-xl font-bold border border-white/10">Join Room</button>
+    <div id="setup" class="w-full max-w-sm bg-zinc-900/50 p-8 rounded-3xl text-center border border-white/10">
+        <h2 class="text-2xl font-bold mb-6 text-blue-500">KARTHIK EDITS</h2>
+        <input type="text" id="code" placeholder="Enter Room Code" class="w-full bg-black border border-white/20 p-4 rounded-xl mb-4 text-center text-xl outline-none focus:border-blue-500">
+        <button onclick="connect('host')" class="w-full bg-blue-600 p-4 rounded-xl font-bold mb-2 hover:bg-blue-500 transition">Create Room</button>
+        <button onclick="connect('guest')" class="w-full bg-zinc-800 p-4 rounded-xl font-bold border border-white/10 hover:bg-zinc-700 transition">Join Room</button>
+        <p class="text-[10px] text-zinc-500 mt-4 uppercase tracking-widest">Global Relay Active</p>
     </div>
 
     <div id="interface" class="hidden fixed inset-0 p-4 flex flex-col gap-4 bg-black">
+        <div id="status" class="text-center text-[10px] font-bold text-blue-400 uppercase tracking-widest py-2">Waiting...</div>
         <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="relative">
+            <div class="vid-box">
                 <video id="remote-v" autoplay playsinline></video>
                 <div class="absolute bottom-4 left-4 text-[10px] bg-black/60 px-2 py-1 rounded">Remote User</div>
             </div>
-            <div class="relative">
+            <div class="vid-box">
                 <video id="local-v" autoplay muted playsinline></video>
                 <div class="absolute bottom-4 left-4 text-[10px] bg-black/60 px-2 py-1 rounded">You</div>
             </div>
         </div>
-        <button onclick="location.reload()" class="mx-auto w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
-            <i class="fas fa-phone-slash text-white"></i>
+        <button onclick="location.reload()" class="mx-auto w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg hover:bg-red-500">
+            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
     </div>
 
     <script>
         let peer, localStream;
-        const ice = { 'iceServers': [{ 'urls': 'stun:stun.l.google.com:19302' }, { 'urls': 'stun:stun1.l.google.com:19302' }] };
+        // Global STUN/TURN Config for long distance
+        const ice = { 
+            config: {
+                'iceServers': [
+                    { 'urls': 'stun:stun.l.google.com:19302' },
+                    { 'urls': 'stun:stun1.l.google.com:19302' },
+                    { 'urls': 'turn:openrelay.metered.ca:80', 'username': 'openrelayproject', 'credential': 'openrelayproject' }
+                ]
+            }
+        };
 
         async function connect(role) {
-            const id = document.getElementById('code').value;
+            const id = document.getElementById('code').value.trim();
             if(!id) return alert("Enter code");
 
             try {
-                // 1. Get stream FIRST to ensure it's ready before signaling
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                // Pre-start camera
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 1280, height: 720 }, 
+                    audio: true 
+                });
                 document.getElementById('local-v').srcObject = localStream;
                 
                 document.getElementById('setup').classList.add('hidden');
@@ -57,19 +72,32 @@
                 const gID = 'vid-g-' + id;
 
                 if(role === 'host') {
-                    peer = new Peer(hID, { config: ice });
+                    peer = new Peer(hID, ice);
+                    document.getElementById('status').innerText = "Host Active: Waiting for Guest...";
                     peer.on('call', (call) => {
-                        call.answer(localStream); // Send my video back
-                        call.on('stream', (s) => document.getElementById('remote-v').srcObject = s);
+                        document.getElementById('status').innerText = "Guest Joining...";
+                        call.answer(localStream);
+                        handleCall(call);
                     });
                 } else {
-                    peer = new Peer(gID, { config: ice });
+                    peer = new Peer(gID, ice);
+                    document.getElementById('status').innerText = "Joining Host...";
                     peer.on('open', () => {
-                        const call = peer.call(hID, localStream); // Call host with my video
-                        call.on('stream', (s) => document.getElementById('remote-v').srcObject = s);
+                        const call = peer.call(hID, localStream);
+                        handleCall(call);
                     });
                 }
             } catch (e) { alert("Enable Camera Access!"); }
+        }
+
+        function handleCall(call) {
+            call.on('stream', (s) => {
+                const remoteVideo = document.getElementById('remote-v');
+                remoteVideo.srcObject = s;
+                // Double check play for mobile
+                remoteVideo.onloadedmetadata = () => remoteVideo.play();
+                document.getElementById('status').innerText = "Live Connection";
+            });
         }
     </script>
 </body>
