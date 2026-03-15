@@ -3,60 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karthik Fast-Call</title>
+    <title>Karthik Global Video</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { background-color: #050505; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .glass { background: rgba(20, 20, 20, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        video { border-radius: 1.25rem; background: #111; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); border: 1px solid rgba(255,255,255,0.1); }
+        body { background-color: #020617; color: white; font-family: sans-serif; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        video { border-radius: 1rem; background: #000; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .hidden { display: none; }
-        .pulse { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4 overflow-hidden">
+<body class="flex items-center justify-center min-h-screen p-4">
 
-    <div class="fixed inset-0 pointer-events-none">
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[120px]"></div>
-    </div>
+    <div id="setup-screen" class="w-full max-w-sm glass p-8 rounded-3xl text-center shadow-2xl">
+        <h1 class="text-3xl font-black mb-2 italic text-blue-500">KARTHIK EDITS</h1>
+        <p class="text-slate-400 text-sm mb-8">Global Video Call (P2P + Relay)</p>
 
-    <div id="setup-screen" class="relative z-10 w-full max-w-sm glass p-8 rounded-[2rem] shadow-2xl text-center">
-        <h1 class="text-2xl font-bold mb-1">Karthik Chat</h1>
-        <p class="text-slate-500 text-xs mb-8 uppercase tracking-[0.2em]">Ultra-Fast Connection</p>
-
-        <input type="text" id="room-input" placeholder="Room Code" 
-            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 mb-6 text-center text-xl font-mono focus:border-blue-500 outline-none transition-all">
+        <input type="text" id="room-id" placeholder="Enter Room Code" 
+            class="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-4 mb-6 text-center text-xl outline-none focus:border-blue-500 transition-all">
         
         <div class="space-y-3">
-            <button onclick="initCall('host')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all active:scale-95">
-                Create Room
-            </button>
-            <button onclick="initCall('guest')" class="w-full bg-white/5 hover:bg-white/10 text-white font-bold py-4 rounded-xl border border-white/10 transition-all active:scale-95">
-                Join Room
-            </button>
+            <button onclick="startCall('host')" class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold transition-all">Create Room</button>
+            <button onclick="startCall('guest')" class="w-full bg-slate-800 hover:bg-slate-700 py-4 rounded-xl font-bold transition-all border border-white/5">Join Room</button>
         </div>
     </div>
 
-    <div id="video-screen" class="hidden fixed inset-0 z-20 p-4 flex flex-col items-center">
-        <div id="status-bar" class="bg-blue-600/20 text-blue-400 px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-4 pulse">
-            Connecting...
+    <div id="call-screen" class="hidden fixed inset-0 flex flex-col p-4 bg-black">
+        <div id="status" class="text-center py-2 text-xs font-bold uppercase tracking-widest text-blue-400">Initializing...</div>
+        
+        <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-6xl mx-auto w-full">
+            <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
+                <video id="remote-video" autoplay playsinline></video>
+                <span class="absolute bottom-4 left-4 text-[10px] bg-black/50 px-2 py-1 rounded uppercase">Remote Peer</span>
+            </div>
+            <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
+                <video id="local-video" autoplay muted playsinline></video>
+                <span class="absolute bottom-4 left-4 text-[10px] bg-black/50 px-2 py-1 rounded uppercase">You</span>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-5xl flex-1">
-            <div class="relative">
-                <video id="remote-video" autoplay playsinline></video>
-                <div class="absolute bottom-4 left-4 bg-black/60 px-3 py-1 rounded-md text-[10px] font-bold uppercase">Remote</div>
-            </div>
-            <div class="relative">
-                <video id="local-video" autoplay muted playsinline></video>
-                <div class="absolute bottom-4 left-4 bg-black/60 px-3 py-1 rounded-md text-[10px] font-bold uppercase">You</div>
-            </div>
-        </div>
-        
-        <div class="mt-6">
-            <button onclick="location.reload()" class="w-16 h-16 bg-red-600 hover:bg-red-500 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90">
+        <div class="py-6 flex justify-center">
+            <button onclick="location.reload()" class="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center hover:bg-red-500 transition-all">
                 <i class="fas fa-phone-slash text-xl"></i>
             </button>
         </div>
@@ -64,74 +52,71 @@
 
     <script>
         let peer, localStream;
-        const roomInput = document.getElementById('room-input');
-        const statusBar = document.getElementById('status-bar');
 
-        // High-speed configuration using global STUN servers
-        const peerConfig = {
-            config: {
-                'iceServers': [
-                    { url: 'stun:stun.l.google.com:19302' },
-                    { url: 'stun:stun1.l.google.com:19302' }
-                ]
-            }
+        // Global ICE Servers (STUN + Free TURN from OpenRelay)
+        const iceConfig = {
+            'iceServers': [
+                { 'urls': 'stun:stun.l.google.com:19302' },
+                { 'urls': 'stun:openrelay.metered.ca:80' },
+                {
+                    'urls': 'turn:openrelay.metered.ca:80',
+                    'username': 'openrelayproject',
+                    'credential': 'openrelayproject'
+                },
+                {
+                    'urls': 'turn:openrelay.metered.ca:443',
+                    'username': 'openrelayproject',
+                    'credential': 'openrelayproject'
+                }
+            ]
         };
 
-        async function initCall(role) {
-            const code = roomInput.value.trim();
-            if (!code) return alert("Enter code");
+        async function startCall(role) {
+            const code = document.getElementById('room-id').value.trim();
+            if (!code) return alert("Please enter a code");
 
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: 1280, height: 720 }, 
-                    audio: true 
-                });
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('local-video').srcObject = localStream;
-                
                 document.getElementById('setup-screen').classList.add('hidden');
-                document.getElementById('video-screen').classList.remove('hidden');
+                document.getElementById('call-screen').classList.remove('hidden');
 
-                const hostID = 'k-fast-host-' + code;
-                const guestID = 'k-fast-guest-' + code;
+                const hostId = 'k-global-host-' + code;
+                const guestId = 'k-global-guest-' + code;
 
                 if (role === 'host') {
-                    peer = new Peer(hostID, peerConfig);
-                    statusBar.innerText = "Waiting for guest...";
+                    peer = new Peer(hostId, { config: iceConfig });
+                    document.getElementById('status').innerText = "Waiting for remote connection...";
                     
                     peer.on('call', (call) => {
-                        statusBar.innerText = "Guest Joining...";
+                        document.getElementById('status').innerText = "Connecting...";
                         call.answer(localStream);
-                        handleStream(call);
+                        call.on('stream', (remoteStream) => {
+                            document.getElementById('remote-video').srcObject = remoteStream;
+                            document.getElementById('status').innerText = "Live • Global Relay Active";
+                        });
                     });
                 } else {
-                    peer = new Peer(guestID, peerConfig);
-                    statusBar.innerText = "Searching for host...";
+                    peer = new Peer(guestId, { config: iceConfig });
+                    document.getElementById('status').innerText = "Searching for host...";
                     
                     peer.on('open', () => {
-                        const call = peer.call(hostID, localStream);
-                        handleStream(call);
+                        const call = peer.call(hostId, localStream);
+                        call.on('stream', (remoteStream) => {
+                            document.getElementById('remote-video').srcObject = remoteStream;
+                            document.getElementById('status').innerText = "Live • Global Relay Active";
+                        });
                     });
                 }
 
                 peer.on('error', (err) => {
                     console.error(err);
-                    alert("Connection error. Ensure the host has created the room first.");
-                    location.reload();
+                    alert("Connection failed. Tip: Make sure the host creates the room first!");
                 });
 
-            } catch (err) {
-                alert("Please allow camera access.");
+            } catch (e) {
+                alert("Camera Error: Please check permissions.");
             }
-        }
-
-        function handleStream(call) {
-            call.on('stream', (stream) => {
-                document.getElementById('remote-video').srcObject = stream;
-                statusBar.innerText = "Live";
-                statusBar.classList.remove('pulse');
-                statusBar.classList.replace('bg-blue-600/20', 'bg-emerald-600/20');
-                statusBar.classList.replace('text-blue-400', 'text-emerald-400');
-            });
         }
     </script>
 </body>
